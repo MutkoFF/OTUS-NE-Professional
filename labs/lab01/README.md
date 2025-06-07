@@ -87,3 +87,10 @@ S2#wr
 Building configuration...
 [OK]
 ```
+**Шаг 3. Выполним настройку сетевых интерфейсов у PC-A и  PC-B**
+
+Настройка сетевого интерфейса PC-A
+![Картинка](./pictures/lab-01-PCA-config.jpeg)
+
+Настройка сетевого интерфейса PC-B
+![Картинка](./pictures/lab-01-PCB-config.jpeg)
