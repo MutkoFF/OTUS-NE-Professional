@@ -288,7 +288,7 @@ Vlan1                  unassigned      YES NVRAM  administratively down down
 
 ![Картинка](./pictures/lab01-PCA-ping2.jpeg)
 
-Как видим, ping выполнен успешно. В Случае, когда PC-A пинговал PC-В и коммутатора S2, первый пакет был потерян из-за ARP-запроса.
+Как видим, ping выполнен успешно. В cлучае, когда PC-A пинговал PC-В и коммутатора S2, первый пакет был потерян из-за ARP-запроса.
 
 [**From the command prompt on PC-B, issue the tracert command to the address of PC-A. What intermediate IP addresses are shown in the results?**]()
 ```cli
