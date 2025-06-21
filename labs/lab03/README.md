@@ -4,432 +4,358 @@
 1) Построение сети и настройка основных параметров устройства;
 2) Настройка и проверка двух DHCPv4-серверов на R1;
 3) Настройка и проверка DHCP-ретранслятора на R2;
-4) Построение сети и настройка основных параметров устройства;
-5) Проверка назначения адреса SLAAC с R1;
-6) Настройка и проверка DHCPv6-сервера без сохранения состояния на R1;
-7) Настройка и проверка DHCPv6-сервера с сохранением состояния на R1;
-8) Настройка и проверка реле DHCPv6 на R2.
+4) Проверка назначения адреса SLAAC с R1;
+5) Настройка и проверка DHCPv6-сервера без сохранения состояния на R1;
+6) Настройка и проверка DHCPv6-сервера с сохранением состояния на R1;
+7) Настройка и проверка реле DHCPv6 на R2.
 
+### DHCPv4
 ### Исходная топология:
 
-![Картинка](./pictures/lab02-topology.jpeg)
+![Картинка](./pictures/lab03-topology.jpeg)
 
-**Шаг 1. Выполним базовую настройку коммутатора S1**
-```cli
-Switch#conf t
+### Заполненная таблица адресации:
+
+![Картинка](./pictures/lab03-address-table.jpg)
+
+**Шаг 1. Разработка схема адресации**
+
+Для начала расссчитаем адресацию для подсети А, где должно быть 58 хостов (клиентская VLAN на R1). Для данной задачи нам подойдёт 26 маска. Получается, что подсеть А будет иметь вид: **192.168.1.0/26**.
+
+Далее, рассчитаем адресацию для подсети B, где должно быть 28 хостов (сеть управления VLAN на R1). Для данной задачи нам подойдёт 27 маска. Получается, что подсеть А будет иметь вид: **192.168.1.64/27**.
+
+После этого, рассчитаем адресацию для подсети С, где должно быть 12 хостов (клиентская сеть на R2). Для данной задачи нам подойдёт 28 маска. Получается, что подсеть А будет иметь вид: **192.168.1.96/28**.
+
+**Шаг 2. Выполним базовую настройку роутеров R1 и R2**
+```
+Router(config)#hostname R1
+R1(config)#no ip domain-lookup
+R1(config)#enable secret class
+R1(config)#line console 0
+R1(config-line)#pass cisco
+R1(config-line)#login
+R1(config-line)#line vty 0 4  
+R1(config-line)#pass cisco
+R1(config-line)#login
+R1(config-line)#exit
+R1(config)#service password-encryption
+R1(config)#banner motd $ Unauthorized access is prohibited! $
+R1(config)#exit
+R1#wr
+Building configuration...
+[OK]
+R1#clock set 20:01:00 june 21 2025                            
+R1#sh clock
+20:01:11.565 UTC Sat Jun 21 2025
+```
+
+```
+Router(config)#hostname R2
+R2(config)#no ip domain-lookup
+R2(config)#enable secret class
+R2(config)#line console 0
+R2(config-line)#pass cisco
+R2(config-line)#login
+R2(config-line)#line vty 0 4  
+R2(config-line)#pass cisco
+R2(config-line)#login
+R2(config-line)#exit
+R2(config)#service password-encryption
+R2(config)#banner motd $ Unauthorized access is prohibited! $
+R2(config)#exit
+R2#wr
+Building configuration...
+[OK]
+R2#clock set 20:05:00 june 21 2025                            
+R2#sh clock
+20:05:10.565 UTC Sat Jun 21 2025
+```
+
+**Шаг 3. Выполним настройку интерфейсов на R1**
+```
+R1(config)#int Ethernet0/1
+R1(config-if)#no sh
+R1(config-if)#int Ethernet0/1.100
+R1(config-subif)#des
+R1(config-subif)#description Clients
+R1(config-subif)#encapsulation dot1q 100
+R1(config-subif)#ip address 192.168.1.1 255.255.255.192
+R1(config-subif)#
+R1(config-subif)#int Ethernet0/1.200                   
+R1(config-subif)#encapsulation dot1q 200
+R1(config-subif)#description Management        
+R1(config-subif)#ip address 192.168.1.65 255.255.255.224
+R1(config-subif)#int Ethernet0/1.1000                   
+R1(config-subif)#description Native                     
+R1(config-subif)#encapsulation dot1q 1000 native
+R1(config-subif)# int Ethernet0/0 
+R1(config-if)#ip add 10.0.0.1 255.255.255.252
+R1(config-if)#no sh
+R1(config-if)#
+R1(config-if)#end
+R1#show ip interface brief
+Interface                  IP-Address      OK? Method Status                Protocol
+Ethernet0/0                10.0.0.1        YES manual up                    up      
+Ethernet0/1                unassigned      YES unset  up                    up      
+Ethernet0/1.100            192.168.1.1     YES manual up                    up      
+Ethernet0/1.200            192.168.1.65    YES manual up                    up      
+Ethernet0/1.1000           unassigned      YES unset  up                    up      
+Ethernet0/2                unassigned      YES unset  administratively down down    
+Ethernet0/3                unassigned      YES unset  administratively down down 
+```
+
+**Шаг 4. Выполним настройку интерфейсов на R2**
+```
+R2(config)#int Ethernet0/0 
+R2(config-if)#ip add 10.0.0.2 255.255.255.252
+R2(config-if)#no sh
+R2(config-if)#int Ethernet0/1
+R2(config-if)#ip add 192.168.1.97 255.255.255.240
+R2(config-if)#no sh
+R2(config-if)#do show ip interface brief
+Interface                  IP-Address      OK? Method Status                Protocol
+Ethernet0/0                10.0.0.2        YES manual up                    up      
+Ethernet0/1                192.168.1.97    YES manual up                    up      
+Ethernet0/2                unassigned      YES unset  administratively down down    
+Ethernet0/3                unassigned      YES unset  administratively down down  
+```
+**Шаг 5. Выполним настройку маршрутов по умолчанию на R1 и R2**
+```
+R1(config)#ip route 0.0.0.0 0.0.0.0 10.0.0.2
+R1(config)#do ping 192.168.1.97     
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.1.97, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 1/1/1 ms
+R1(config-if)#do wr
+Building configuration...
+[OK]
+```
+
+```
+R2(config)#ip route 0.0.0.0 0.0.0.0 10.0.0.1
+R2(config)#do ping 192.168.1.1 
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.1.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 1/1/1 ms
+R2(config-if)#do wr
+Building configuration...
+[OK]
+```
+
+**Шаг 6. Выполним базовую настройку коммутаторов S1 и S2**
+```
 Switch(config)#hostname S1
 S1(config)#no ip domain-lookup
 S1(config)#enable secret class
 S1(config)#line console 0
 S1(config-line)#pass cisco
 S1(config-line)#login
-S1(config-line)#logging synchronous 
-S1(config-line)#line vty 0 15
-S1(config-line)#pass cisco
-S1(config-line)#login
+S1(config-line)#line vty 0 4
+S1(config-line)#pass cisco  
+S1(config-line)#login     
 S1(config-line)#exit
+S1(config)#service password-encryption
 S1(config)#banner motd $ Unauthorized access is prohibited! $
-S1(config)#int vlan1
-S1(config-if)#ip add
-S1(config-if)#ip address 192.168.1.1 255.255.255.0
-S1(config-if)#no sh
-S1(config-if)#
-%LINK-5-CHANGED: Interface Vlan1, changed state to up
-S1(config-if)#end
-S1#wr
+S1(config)#do wr
 Building configuration...
-[OK]
+Compressed configuration from 978 bytes to 695 bytes[OK]
+S1(config)#do clock set 20:15:00 june 21 2025 
+S1(config)#do sh clock
+20:15:03.465 UTC Sat Jun 21 2025
 ```
-**Шаг 2. Выполним базовую настройку коммутатора S2**
-```cli
-Switch#conf t
+
+```
 Switch(config)#hostname S2
 S2(config)#no ip domain-lookup
 S2(config)#enable secret class
 S2(config)#line console 0
 S2(config-line)#pass cisco
 S2(config-line)#login
-S2(config-line)#logging synchronous 
-S2(config-line)#line vty 0 15
-S2(config-line)#pass cisco
-S2(config-line)#login
+S2(config-line)#line vty 0 4
+S2(config-line)#pass cisco  
+S2(config-line)#login     
 S2(config-line)#exit
+S2(config)#service password-encryption
 S2(config)#banner motd $ Unauthorized access is prohibited! $
-S2(config)#int vlan1
-S2(config-if)#ip add
-S2(config-if)#ip address 192.168.1.2 255.255.255.0
-S2(config-if)#no sh
-S2(config-if)#
-%LINK-5-CHANGED: Interface Vlan1, changed state to up
-S2(config-if)#end
-S2#wr
+S2(config)#do wr
 Building configuration...
-[OK]
+Compressed configuration from 978 bytes to 695 bytes[OK]
+S2(config)#do clock set 20:20:00 june 21 2025 
+S2(config)#do sh clock
+20:20:03.465 UTC Sat Jun 21 2025
 ```
-**Шаг 3. Выполним базовую настройку коммутатора S3**
-```cli
-Switch#conf t
-Switch(config)#hostname S3
-S3(config)#no ip domain-lookup
-S3(config)#enable secret class
-S3(config)#line console 0
-S3(config-line)#pass cisco
-S3(config-line)#login
-S3(config-line)#logging synchronous 
-S3(config-line)#line vty 0 15
-S3(config-line)#pass cisco
-S3(config-line)#login
-S3(config-line)#exit
-S3(config)#banner motd $ Unauthorized access is prohibited! $
-S3(config)#int vlan1
-S3(config-if)#ip add
-S3(config-if)#ip address 192.168.1.3 255.255.255.0
-S3(config-if)#no sh
-S3(config-if)#
-%LINK-5-CHANGED: Interface Vlan1, changed state to up
-S3(config-if)#end
-S3#wr
-Building configuration...
-[OK]
+
+**Шаг 7. Выполним настройку VLAN'ов на S1 и S2**
 ```
-**Шаг 4. Проверим связь между коммутаторами**
-
-Проверка связи с коммутатора S1
-```cli
-S1#ping 192.168.1.2
-
-Type escape sequence to abort.
-Sending 5, 100-byte ICMP Echos to 192.168.1.2, timeout is 2 seconds:
-..!!!
-Success rate is 60 percent (3/5), round-trip min/avg/max = 0/1/3 ms
-
-S1#ping 192.168.1.3
-
-Type escape sequence to abort.
-Sending 5, 100-byte ICMP Echos to 192.168.1.3, timeout is 2 seconds:
-..!!!
-Success rate is 60 percent (3/5), round-trip min/avg/max = 0/0/1 ms
-```
-Проверка связи с коммутатора S2
-```
-S2#ping 192.168.1.3
-
-Type escape sequence to abort.
-Sending 5, 100-byte ICMP Echos to 192.168.1.3, timeout is 2 seconds:
-..!!!
-Success rate is 60 percent (3/5), round-trip min/avg/max = 0/0/0 ms
-```
-**Шаг 5. Определим роли коммутаторов**
-
-На S1 отключим все порты кроме f0/2, f0/4 и отобразим данные протокола STP
-```
-S1(config)#interface range f0/1 - 24, g0/1 - 2
+S1(config)#do sh int des
+Interface                      Status         Protocol Description
+Et0/0                          up             up       
+Et0/1                          up             up       
+Et0/2                          up             up       
+Et0/3                          up             up       
+S1(config)#
+S1(config)#vlan 100
+S1(config-vlan)#name Clients
+S1(config-vlan)#vlan 200
+S1(config-vlan)#name Management
+S1(config-vlan)#vlan 999
+S1(config-vlan)#name Parking_Lot
+S1(config-vlan)#vlan 1000
+S1(config-vlan)#name Native
+S1(config-vlan)#
+S1(config-vlan)#int vlan 200
+S1(config-if)#ip address 192.168.1.66 255.255.255.224
+S1(config-if)#no sh
+S1(config-if)#ex
+S1(config-if)#exit
+S1(config)#ip default-gateway 192.168.1.65
+S1(config)#int range Ethernet0/2 - 3
+S1(config-if-range)#sw m a
+S1(config-if-range)#sw a v 999
 S1(config-if-range)#sh
-S1(config-if-range)#interface range f0/2, f0/4
-S1(config-if-range)#no sh
-S1(config-if-range)#switchport mode trunk
-S1(config-if-range)#do sh spanning-tree
-VLAN0001
-  Spanning tree enabled protocol ieee
-  Root ID    Priority    32769
-             Address     0001.9773.6507
-             This bridge is the root
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+S1(config-if-range)#int Ethernet0/0 
+S1(config-if)#sw m a
+S1(config-if)#sw a v 100
+S1(config-if)#
+S1(config-if)#do sh vl br
 
-  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
-             Address     0001.9773.6507
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-             Aging Time  20
-
-Interface        Role Sts Cost      Prio.Nbr Type
----------------- ---- --- --------- -------- --------------------------------
-Fa0/2            Desg FWD 19        128.2    P2p
-Fa0/4            Desg FWD 19        128.4    P2p
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Et0/1
+100  Clients                          active    Et0/0
+200  Management                       active    
+999  Parking_Lot                      active    Et0/2, Et0/3
+1000 Native                           active    
+1002 fddi-default                     act/unsup 
+1003 token-ring-default               act/unsup 
+1004 fddinet-default                  act/unsup 
+1005 trnet-default                    act/unsup 
 ```
 
-На S2 отключим все порты кроме f0/2, f0/4 и отобразим данные протокола STP
 ```
-S2(config)#interface range f0/1 - 24, g0/1 - 2
+S2(config)#do sh int des
+Interface                      Status         Protocol Description
+Et0/0                          up             up       
+Et0/1                          up             up       
+Et0/2                          up             up       
+Et0/3                          up             up
+S2(config)#interface vlan 1
+S2(config-if)#ip address 192.168.1.98 255.255.255.240
+S2(config-if)#no sh
+S2(config-if)#ex
+S2(config)#ip default-gateway 192.168.1.97
+S2(config)#int range Ethernet0/2 - 3
+S2(config-if-range)#sw m a
 S2(config-if-range)#sh
-S2(config-if-range)#interface range f0/2, f0/4
-S2(config-if-range)#no sh
-S2(config-if-range)#switchport mode trunk
-S2(config-if-range)#do sh spanning-tree
-VLAN0001
-  Spanning tree enabled protocol ieee
-  Root ID    Priority    32769
-             Address     0001.9773.6507
-             Cost        19
-             Port        2(FastEthernet0/2)
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+```
+[**Why is interface F0/5 listed under VLAN 1?**]()
+```
+Потому что все интерфейс по умодчанию находятся в VLAN 1. В моём случае это интерфейс Et0/1.
+```
+**Шаг 8. На S1 сконфигурируем магистральный порт**
+```
+S1(config)#int Ethernet0/1
+S1(config-if)#switchport trunk encapsulation dot1q
+S1(config-if)#switchport mode trunk               
+S1(config-if)#switchport trunk native vlan 1000
+S1(config-if)#switchport trunk allowed vlan 100,200,1000
+S1(config-if)#do wr
+Building configuration...
+Compressed configuration from 1447 bytes to 963 bytes[OK]
+S1(config-if)#do show interfaces trunk
 
-  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
-             Address     00D0.D311.727A
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-             Aging Time  20
+Port        Mode             Encapsulation  Status        Native vlan
+Et0/1       on               802.1q         trunking      1000
 
-Interface        Role Sts Cost      Prio.Nbr Type
----------------- ---- --- --------- -------- --------------------------------
-Fa0/2            Root FWD 19        128.2    P2p
-Fa0/4            Altn BLK 19        128.4    P2p
-```
+Port        Vlans allowed on trunk
+Et0/1       100,200,1000
 
-На S3 отключим все порты кроме f0/2, f0/4 и отобразим данные протокола STP
-```
-S3(config)#interface range f0/1 - 24, g0/1 - 2
-S3(config-if-range)#sh
-S3(config-if-range)#interface range f0/2, f0/4
-S3(config-if-range)#no sh
-S3(config-if-range)#switchport mode trunk
-S3(config-if-range)#do sh spanning-tree
-VLAN0001
-  Spanning tree enabled protocol ieee
-  Root ID    Priority    32769
-             Address     0001.9773.6507
-             Cost        19
-             Port        4(FastEthernet0/4)
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+Port        Vlans allowed and active in management domain
+Et0/1       100,200,1000
 
-  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
-             Address     000D.BD53.E106
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-             Aging Time  20
-
-Interface        Role Sts Cost      Prio.Nbr Type
----------------- ---- --- --------- -------- --------------------------------
-Fa0/2            Desg FWD 19        128.2    P2p
-Fa0/4            Root FWD 19        128.4    P2p
+Port        Vlans in spanning tree forwarding state and not pruned
+Et0/1       100,200,1000
 ```
-
-Далее, запишем роль и состояние активных портов на каждом коммутаторе в топологии.
-
-S1
+[**At this point, what IP address would the PC’s have if they were connected to the network using DHCP?**]()
 ```
-MAC: 0001.9773.6507
-Interface F0/1: Admin shutdown
-Interface F0/2: Desg
-Interface F0/3: Admin shutdown
-Interface F0/4: Desg
+У него был бы адрес из сети 169.254.x.x (APIPA-адрес)
 ```
-S2
+**Шаг 9. На R1 и R2 насроем DHCPv4-сервер**
 ```
-MAC: 00D0.D311.727A
-Interface F0/1: Admin shutdown
-Interface F0/2: Root
-Interface F0/3: Admin shutdown
-Interface F0/4: Altn
-```
-S3
-```
-MAC: 000D.BD53.E106
-Interface F0/1: Admin shutdown
-Interface F0/2: Desg
-Interface F0/3: Admin shutdown
-Interface F0/4: Root
-```
-
-[**Какой коммутатор является корневым мостом?**]()
-```
-В моей топологии коммутатор S1 является root-коммутатором
-```
-[**Почему этот коммутатор был выбран протоколом spanning-tree в качестве корневого моста?**]()
-```
-Коммутатор S1 (MAC: 0001.9773.6507) является корневым потому что при одинаковых приоритетах он был 
-выбран по минимальному MAC-адресу.
-```
-[**Какие порты на коммутаторе являются корневыми портами?**]()
-```
-Корневые порты — это порты, выбранные на каждом коммутаторе для достижения корневого коммутатора.
-
-S1: - в моей стопологии это root-коммутатор
-S2: Interface F0/2
-S3: Interface F0/4
-```
-[**Какие порты на коммутаторе являются назначенными портами?**]()
-```
-Designated Port — это некорневой порт моста между сегментами 
-сети, принимающий трафик из соответствующего сегмента. 
-
-S1: Interface F0/2, F0/4
-S2: - так как по умолчанию коммутатор использует PVST, у него порт Fa0/4
-находится в состоянии Alternative
-S3: Interface Fa0/2
-```
-[**Какой порт отображается в качестве альтернативного и в настоящее время заблокирован?**]()
-```
-Порт Fa0/4 коммутатора S2.
-```
-[**Почему протокол spanning-tree выбрал этот порт в качестве невыделенного (заблокированного) порта?**]()
-```
-Данный порт является альтернативным т.к. он является резервным потому что есть более короткий путь к корневому коммутатору.
-```
-**Шаг 6. Понаблюдаем за процессом выбора протоколом STP порта, исходя из стоимости портов**
-
-Как было показано в предыдущем шаге, коммутатор S2 у интерфейса Fa0/4 имеест состояние Alternative. Изменим стоимость порта Fa0/2, который в данный момент является Root-портом, и посмотрим на изменения
-```
-S2(config-if)#int Fa0/2 
-S2(config-if)#spanning-tree cost 18
-S2(config-if)#
-S2(config-if)#do sh spa
-VLAN0001
-  Spanning tree enabled protocol ieee
-  Root ID    Priority    32769
-             Address     0001.9773.6507
-             Cost        19
-             Port        2(FastEthernet0/2)
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-
-  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
-             Address     00D0.D311.727A
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-             Aging Time  20
-
-Interface        Role Sts Cost      Prio.Nbr Type
----------------- ---- --- --------- -------- --------------------------------
-Fa0/2            Root FWD 18        128.2    P2p
-Fa0/4            Desg FWD 19        128.4    P2p
-```
-Как можно заметить, после смены приоритета порт Fa0/4 изменил своё состояние на "Designated", посмотрим изменения на коммутаторе S3.
-```
-S3#sh spa
-VLAN0001
-  Spanning tree enabled protocol ieee
-  Root ID    Priority    32769
-             Address     0001.9773.6507
-             Cost        19
-             Port        4(FastEthernet0/4)
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-
-  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
-             Address     000D.BD53.E106
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-             Aging Time  20
-
-Interface        Role Sts Cost      Prio.Nbr Type
----------------- ---- --- --------- -------- --------------------------------
-Fa0/2            Desg FWD 19        128.2    P2p
-Fa0/4            Altn BLK 19        128.4    P2p
-```
-
-[**Почему протокол spanning-tree заменяет ранее заблокированный порт на назначенный порт и блокирует порт, который был назначенным портом на другом коммутаторе?**]()
-```
-Потому что протокол STP выбирает путь с наименьшей стоимостью и делает такой путь до рута альтернативным.
-```
-Сбросим ручные настройки стоимости и посмотрим на состояние STP
-```
-S2(config-if)#no spanning-tree cost 18
-S2(config-if)#do sh spa
-VLAN0001
-  Spanning tree enabled protocol ieee
-  Root ID    Priority    32769
-             Address     0001.9773.6507
-             Cost        19
-             Port        2(FastEthernet0/2)
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-
-  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
-             Address     00D0.D311.727A
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-             Aging Time  20
-
-Interface        Role Sts Cost      Prio.Nbr Type
----------------- ---- --- --------- -------- --------------------------------
-Fa0/2            Root FWD 19        128.2    P2p
-Fa0/4            Altn BLK 19        128.4    P2p
-```
-**Шаг 7. Понаблюдаем за процессом выбора протоколом STP порта, исходя из приоритета портов**
-
-Включим порты F0/1 и F0/3 на всех коммутаторах.
-```
-S1(config)#interface range f0/1, f0/3
-S1(config-if-range)#no sh
-%LINK-5-CHANGED: Interface FastEthernet0/1, changed state to down
-%LINK-5-CHANGED: Interface FastEthernet0/3, changed state to down
-```
-```
-S2(config)#interface range f0/1, f0/3
-S2(config-if-range)#no sh
-%LINK-5-CHANGED: Interface FastEthernet0/3, changed state to down
-S2(config-if-range)#
-%LINK-5-CHANGED: Interface FastEthernet0/1, changed state to up
-%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/1, changed state to up
-%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/1, changed state to down
-%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/1, changed state to up
+R1(config)#ip dhcp excluded-address 192.168.1.1 192.168.1.5
+R1(config)#ip dhcp pool R1_Client_LAN
+R1(dhcp-config)#network 192.168.1.0 255.255.255.192
+R1(dhcp-config)#domain-name ccna-lab.com
+R1(dhcp-config)#default-router 192.168.1.1
+R1(dhcp-config)#lease 2 12 30
+R1(dhcp-config)#ip dhcp excluded-address 192.168.1.97 192.168.1.101
+R1(config)#ip dhcp pool R2_Client_LAN
+R1(dhcp-config)#network 192.168.1.96 255.255.255.240
+R1(dhcp-config)#default-router 192.168.1.97
+R1(dhcp-config)#domain-name ccna-lab.com
+R1(dhcp-config)#lease 2 12 30
+R1(dhcp-config)#
+R1(dhcp-config)#do wr
+Building configuration...
+[OK]
 ```
 
 ```
-S3(config)#interface range f0/1, f0/3
-S3(config-if-range)#no sh
-S3(config-if-range)#
-%LINK-5-CHANGED: Interface FastEthernet0/1, changed state to up
-%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/1, changed state to up
-%LINK-5-CHANGED: Interface FastEthernet0/3, changed state to up
-%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/3, changed state to up
+R2(config)#int Ethernet0/1 
+R2(config-if)#ip helper-address 10.0.0.1
+R2(config-if)#
+R2(config-if)#do wr
+Building configuration...
+[OK]
 ```
-Далее, посмотрим на состояние портов некорневого моста.
+
+**Шаг 10. На PC-A и PC-B запросим конфигурацию с DHCP-сервера и посмотрим информацию о назначенных арендах**
 ```
-S2#sh spa
-VLAN0001
-  Spanning tree enabled protocol ieee
-  Root ID    Priority    32769
-             Address     0001.9773.6507
-             Cost        19
-             Port        1(FastEthernet0/1)
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+PC-A> ip dhcp
+DDORA IP 192.168.1.6/26 GW 192.168.1.1
 
-  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
-             Address     00D0.D311.727A
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-             Aging Time  20
+PC-A> show ip
 
-Interface        Role Sts Cost      Prio.Nbr Type
----------------- ---- --- --------- -------- --------------------------------
-Fa0/1            Root FWD 19        128.1    P2p
-Fa0/3            Altn BLK 19        128.3    P2p
-Fa0/2            Altn BLK 19        128.2    P2p
-Fa0/4            Altn BLK 19        128.4    P2p
+NAME        : VPCS[1]
+IP/MASK     : 192.168.1.6/26
+GATEWAY     : 192.168.1.1
+DNS         : 
+DHCP SERVER : 192.168.1.1
+DHCP LEASE  : 217793, 217800/108900/190575
+DOMAIN NAME : ccna-lab.com
+MAC         : 00:50:79:66:68:65
+LPORT       : 20000
+RHOST:PORT  : 127.0.0.1:30000
+MTU         : 1500
 ```
 
 ```
-S3#sh spa
-VLAN0001
-  Spanning tree enabled protocol ieee
-  Root ID    Priority    32769
-             Address     0001.9773.6507
-             Cost        19
-             Port        3(FastEthernet0/3)
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+PC-B> ip dhcp
+DDORA IP 192.168.1.102/28 GW 192.168.1.97
 
-  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
-             Address     000D.BD53.E106
-             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
-             Aging Time  20
+PC-B> show ip
 
-Interface        Role Sts Cost      Prio.Nbr Type
----------------- ---- --- --------- -------- --------------------------------
-Fa0/1            Desg FWD 19        128.1    P2p
-Fa0/2            Desg FWD 19        128.2    P2p
-Fa0/3            Root FWD 19        128.3    P2p
-Fa0/4            Altn BLK 19        128.4    P2p
+NAME        : VPCS[1]
+IP/MASK     : 192.168.1.102/28
+GATEWAY     : 192.168.1.97
+DNS         : 
+DHCP SERVER : 10.0.0.1
+DHCP LEASE  : 217796, 217800/108900/190575
+DOMAIN NAME : ccna-lab.com
+MAC         : 00:50:79:66:68:6a
+LPORT       : 20000
+RHOST:PORT  : 127.0.0.1:30000
+MTU         : 1500
 ```
-[**Какой порт выбран протоколом STP в качестве порта корневого моста на каждом коммутаторе некорневого моста?**]()
+
 ```
-На S2 это порт Fa0/1, на коммутаторе S3 это порт Fa0/3 
-```
-[**Почему протокол STP выбрал эти порты в качестве портов корневого моста на этих коммутаторах?**]()
-```
-Потому что они напрямую подключены в корневой коммутатор и имеют наименьший номер по порядку.
-```
-### Вопросы для повторения
-[**1.	Какое значение протокол STP использует первым после выбора корневого моста, чтобы определить выбор порта?**]()
-```
-После выбора корневого моста протокол STP использует значения стоимости пути (path cost) для определения выбора порта.
-```
-[**2.	Если первое значение на двух портах одинаково, какое следующее значение будет использовать протокол STP при выборе порта?**]()
-```
-Далее он будет сравнивать Bridge ID и выберет с наименьшим значением.
-```
-[**3.	Если оба значения на двух портах равны, каким будет следующее значение, которое использует протокол STP при выборе порта?**]()
-```
-Далее STP будет сравнивать идентификатор порта и выберет с наименьшим значением.
+R1(config)#do show ip dhcp binding 
+Bindings from all pools not associated with VRF:
+IP address          Client-ID/     Lease expiration        Type
+    Hardware address/
+    User name
+192.168.1.6         0100.5079.6668.65       Jun 24 2025 09:49 AM    Automatic
+192.168.1.102       0100.5079.6668.6a       Jun 24 2025 09:58 AM    Automatic
 ```
