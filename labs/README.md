@@ -2,3 +2,4 @@
 
 1. [VLAN](lab01/)
 2. [STP](lab02/)
+3. [DHCPv4/v6, SLAAC](lab03/)
