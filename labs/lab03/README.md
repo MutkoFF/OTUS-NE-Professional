@@ -318,7 +318,7 @@ DDORA IP 192.168.1.6/26 GW 192.168.1.1
 
 PC-A> show ip
 
-NAME        : VPCS[1]
+NAME        : PC-A
 IP/MASK     : 192.168.1.6/26
 GATEWAY     : 192.168.1.1
 DNS         : 
@@ -337,7 +337,7 @@ DDORA IP 192.168.1.102/28 GW 192.168.1.97
 
 PC-B> show ip
 
-NAME        : VPCS[1]
+NAME        : PC-B
 IP/MASK     : 192.168.1.102/28
 GATEWAY     : 192.168.1.97
 DNS         : 
@@ -359,3 +359,226 @@ IP address          Client-ID/     Lease expiration        Type
 192.168.1.6         0100.5079.6668.65       Jun 24 2025 09:49 AM    Automatic
 192.168.1.102       0100.5079.6668.6a       Jun 24 2025 09:58 AM    Automatic
 ```
+
+### DHCPv6
+### Исходная топология:
+
+![Картинка](./pictures/lab03-address-table-ipv6.jpg)
+
+**Шаг 1. Выполним базовую настройку коммутаторов и маршрутизаторов**
+```
+Switch(config)#hostname S1
+S1(config)#no ip domain-lookup
+S1(config)#enable secret class
+S1(config)#line console 0
+S1(config-line)#pass cisco
+S1(config-line)#login
+S1(config-line)#line vty 0 4
+S1(config-line)#pass cisco
+S1(config-line)#login
+S1(config-line)#exit
+S1(config)#service password-encryption
+S1(config)#banner motd $ Unauthorized access is prohibited! $
+S1(config-if-range)#do sh int des
+Interface                      Status         Protocol Description
+Et0/0                          up             up       
+Et0/1                          up             up       
+Et0/2                          up             up     
+Et0/3                          up             up 
+S1(config)#int range Ethernet0/2 - 3
+S1(config-if-range)#sh
+S1(config-if-range)#
+S1(config-if-range)#do wr
+Building configuration...
+Compressed configuration from 973 bytes to 693 bytes[OK]
+```
+
+```
+Switch(config)#hostname S2
+S2(config)#
+S2(config)#enable secret class
+S2(config)#line console 0
+S2(config-line)#pass cisco
+S2(config-line)#login
+S2(config-line)#line vty 0 4
+S2(config-line)#password cisco
+S2(config-line)#login
+S2(config-line)#
+S2(config-line)#
+S2(config-line)#exit
+S2(config)#service password-encryption
+S2(config)#banner motd $ Unauthorized access is prohibited! $
+S2(config)#do sh int des
+Interface                      Status         Protocol Description
+Et0/0                          up             up       
+Et0/1                          up             up       
+Et0/2                          up             up       
+Et0/3                          up             up       
+S2(config)#int range Ethernet0/2 - 3
+S2(config-if-range)#sh
+S2(config-if-range)#do wr
+Building configuration...
+Compressed configuration from 978 bytes to 700 bytes[OK]
+```
+
+```
+Router(config)#hostname R1
+R1(config)#no ip domain-lookup
+R1(config)#enable secret class
+R1(config)#line console 0
+R1(config-line)#pass cisco
+R1(config-line)#login
+R1(config-line)#line vty 0 4
+R1(config-line)#pass cisco  
+R1(config-line)#login       
+R1(config-line)#exit
+R1(config)#service password-encryption
+R1(config)#banner motd $ Unauthorized access is prohibited! $
+R1(config)#ipv6 unicast-routing
+R1(config)#do wr
+Building configuration...
+[OK]
+```
+
+```
+Router(config)#hostname R2
+R2(config)#no ip domain-lookup
+R2(config)#enable secret class
+R2(config)#line console 0
+R2(config-line)#pass cisco
+R2(config-line)#login
+R2(config-line)#line vty 0 4
+R2(config-line)#pass cisco  
+R2(config-line)#login       
+R2(config-line)#exit
+R2(config)#service password-encryption
+R2(config)#banner motd $ Unauthorized access is prohibited! $
+R2(config)#ipv6 unicast-routing
+R2(config)#do wr
+Building configuration...
+[OK]
+```
+
+**Шаг 2. Выполним настройку интерфейсов на роутерах и проверим сетевую связанность**
+```
+R1(config)#int Ethernet0/0 
+R1(config-if)#ipv6 address fe80::1 link-local
+R1(config-if)#ipv6 address 2001:db8:acad:2::1/64
+R1(config-if)#no sh
+R1(config-if)#int Ethernet0/1
+R1(config-if)#ipv6 address fe80::1 link-local
+R1(config-if)#ipv6 address 2001:db8:acad:1::1/64
+R1(config-if)#no sh
+R1(config-if)#exit
+R1(config)#ipv6 route ::/0 2001:db8:acad:2::2
+R1(config)#do ping 2001:db8:acad:3::1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 2001:DB8:ACAD:3::1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 1/3/13 ms
+```
+
+```
+R2(config)#int Ethernet0/0
+R2(config-if)#ipv6 address fe80::2 link-local
+R2(config-if)#ipv6 address 2001:db8:acad:2::2/64
+R2(config-if)#no sh
+R2(config-if)#int Ethernet0/1                   
+R2(config-if)#ipv6 address fe80::1 link-local
+R2(config-if)#ipv6 address 2001:db8:acad:3::1/64
+R2(config-if)#no sh
+R2(config-if)#exit
+R2(config)#ipv6 route ::/0 2001:db8:acad:2::1
+```
+
+**Шаг 3. На PC-A сконфигурируем IPv6 адрес методом SLAAC**
+```
+PC-A> ip auto
+GLOBAL SCOPE      : 2001:db8:acad:1:2050:79ff:fe66:689f/64
+ROUTER LINK-LAYER : aa:bb:cc:00:07:10
+
+PC-A> show ipv6
+NAME              : PC-A
+LINK-LOCAL SCOPE  : fe80::250:79ff:fe66:689f/64
+GLOBAL SCOPE      : 2001:db8:acad:1:2050:79ff:fe66:689f/64
+DNS               : 
+ROUTER LINK-LAYER : aa:bb:cc:00:07:10
+MAC               : 00:50:79:66:68:9f
+LPORT             : 20000
+RHOST:PORT        : 127.0.0.1:30000
+MTU:              : 1500
+```
+[**Where did the host-id portion of the address come from?**]()
+```
+Как можно заметить, часть IPv6-адреса, кторая отвечает за host-id компьютер взял из MAC-адреса сетевого интерфейса (EUI-64).
+```
+
+**Шаг 4. На R1 настроим DHCPv6 пул для предоставления информации о DNS-сервере DHCP-клиентам и получим данные настройки по DHCP**
+```
+R1(config)#ipv6 dhcp pool R1-STATELESS
+R1(config-dhcpv6)#dns-server 2001:db8:acad::254
+R1(config-dhcpv6)#domain-name STATELESS.com
+R1(config-dhcpv6)#int Ethernet0/1
+R1(config-if)#ipv6 nd other-config-flag
+R1(config-if)#ipv6 dhcp server R1-STATELESS
+R1(config-if)#do wr
+Building configuration...
+[OK]
+```
+
+К сожалению, так как в Pnetlab в качестве компьютера я использую VPCS, в нём нет возможности запросить адрес DNS-сервера для IPv6.
+```
+PC-A> ip ?   
+
+ip ARG ... [OPTION]
+  Configure the current VPC's IP settings
+    ARG ...:
+    address [mask] [gateway]
+    address [gateway] [mask]
+                   Set the VPC's ip, default gateway ip and network mask
+                   Default IPv4 mask is /24, IPv6 is /64. Example:
+                   ip 10.1.1.70/26 10.1.1.65 set the VPC's ip to 10.1.1.70,
+                   the gateway to 10.1.1.65, the netmask to 255.255.255.192.
+                   In tap mode, the ip of the tapx is the maximum host ID
+                   of the subnet. In the example above the tapx ip would be 
+                   10.1.1.126
+                   mask may be written as /26, 26 or 255.255.255.192
+    auto           Attempt to obtain IPv6 address, mask and gateway using SLAAC
+    dhcp [OPTION]  Attempt to obtain IPv4 address, mask, gateway, DNS via DHCP
+          -d         Show DHCP packet decode
+          -r         Renew DHCP lease
+          -x         Release DHCP lease
+    dns ip         Set DNS server ip, delete if ip is '0'
+    dns6 ipv6      Set DNS server ipv6, delete if ipv6 is '0'
+    domain NAME    Set local domain name to NAME
+```
+
+Поэтому, я повторил данную топологию и настроки в Cisco Packet Tracer и получил адрес DNS-сервера.
+
+![Картинка](./pictures/lab03-dns-config-pca-ipv6.jpg)
+
+**Шаг 5. На R1 настроим DHCPv6 пул с отслеживанием состояния аренды и на PC-В получим конфигурацию по SLAAC**
+```
+R1(config)#ipv6 dhcp pool R2-STATEFUL
+R1(config-dhcpv6)#address prefix 2001:db8:acad:3:aaa::/80
+R1(config-dhcpv6)#dns-server 2001:db8:acad::254
+R1(config-dhcpv6)#domain-name STATEFUL.com
+R1(config-dhcpv6)#exit 
+R1(config)#int Ethernet0/0 
+R1(config-if)#ipv6 dhcp server R2-STATEFUL
+```
+![Картинка](./pictures/lab03-slaac-config-pcb-ipv6.jpg)
+
+**Шаг 6. На R2 настроим DHCP relay и повторно запросим конфигурацию с PC-B**
+```
+R2(config)#int Ethernet0/1 
+R2(config-if)#ipv6 nd managed-config-flag 
+R2(config-if)#ipv6 dhcp relay destination 2001:db8:acad:2::1 
+R2(config-if)#do wr                                                
+Building configuration...
+[OK] 
+```
+
+На этом моменте уже из-за ограничений Cisco Packet Tracer мне пришлось запихивать полноценный образ Linux в Pnetlab ;) По итогу сервер успешно получил конфигурацию:
+
+![Картинка](./pictures/lab03-dhcp-pcb-ipv6.jpg)
