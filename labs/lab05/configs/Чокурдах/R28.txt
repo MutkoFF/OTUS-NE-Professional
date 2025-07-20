@@ -120,7 +120,7 @@ interface Ethernet0/2.60
  ipv6 address 2001:2025:2222:60::1/64
  ipv6 nd other-config-flag
  ipv6 dhcp server OTUS-vlan60
- ipv6 policy route-map PBR-50
+ ipv6 policy route-map PBR-60
 !
 interface Ethernet0/2.666
  description Native 
