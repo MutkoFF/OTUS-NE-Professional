@@ -1,0 +1,196 @@
+R28#sh run
+Building configuration...
+
+Current configuration : 2495 bytes
+!
+! Last configuration change at 19:44:59 UTC Sun Jul 20 2025
+!
+version 15.7
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R28
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+ip cef    
+ipv6 unicast-routing
+ipv6 cef
+ipv6 dhcp pool OTUS-vlan50
+ dns-server 2001:2025:2222:50::1
+ domain-name otus.ru
+!
+ipv6 dhcp pool OTUS-vlan60
+ dns-server 2001:2025:2222:60::1
+ domain-name otus.ru
+!
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback1
+ no ip address
+ ipv6 address FE80:2222::3 link-local
+ ipv6 address 2001:DEAD:BEEF::7/128
+!
+interface Ethernet0/0
+ no ip address
+ duplex auto
+ ipv6 address FE80:2222::3 link-local
+ ipv6 address 2001:2025:ABCD:FF08::/127
+!
+interface Ethernet0/1
+ no ip address
+ duplex auto
+ ipv6 address FE80:2222::3 link-local
+ ipv6 address 2001:2025:ABCD:FF07::/127
+!
+interface Ethernet0/2
+ no ip address
+ duplex auto
+!
+interface Ethernet0/2.50
+ encapsulation dot1Q 50
+ ipv6 address FE80:2222::3 link-local
+ ipv6 address 2001:2025:2222:50::1/64
+ ipv6 nd other-config-flag
+ ipv6 dhcp server OTUS-vlan50
+ ipv6 policy route-map PBR-50
+!
+interface Ethernet0/2.60
+ encapsulation dot1Q 60
+ ipv6 address FE80:2222::3 link-local
+ ipv6 address 2001:2025:2222:60::1/64
+ ipv6 nd other-config-flag
+ ipv6 dhcp server OTUS-vlan60
+ ipv6 policy route-map PBR-50
+!
+interface Ethernet0/2.666
+ description Native 
+ encapsulation dot1Q 666 native
+!
+interface Ethernet0/3
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/0
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/1
+ no ip address
+ shutdown 
+ duplex auto
+!
+interface Ethernet1/2
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/3
+ no ip address
+ shutdown
+ duplex auto
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+ipv6 ioam timestamp
+!
+route-map PBR-50 permit 10
+ match ipv6 address PBR-50
+ set ipv6 next-hop 2001:2025:ABCD:FF07::1
+!
+route-map PBR-60 permit 10
+ match ipv6 address PBR-60
+ set ipv6 next-hop 2001:2025:ABCD:FF08::1
+!
+!
+!
+ipv6 access-list PBR-50
+ permit ipv6 2001:2025:2222:50::/64 any
+!
+ipv6 access-list PBR-60
+ permit ipv6 2001:2025:2222:60::/64 any
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end
