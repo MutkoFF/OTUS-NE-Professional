@@ -1,0 +1,111 @@
+SW29(config)#do sh run
+Building configuration...
+
+Current configuration : 1654 bytes
+!
+! Last configuration change at 13:31:38 UTC Sun Jul 20 2025
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+service compress-config
+!
+hostname SW29
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+!
+!         
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+spanning-tree mode pvst
+spanning-tree extend system-id
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!         
+!
+!
+interface Ethernet0/0
+ switchport access vlan 50
+ switchport mode access
+ switchport port-security mac-address sticky
+ switchport port-security mac-address sticky 0050.7966.68f9
+ switchport port-security
+ ip arp inspection limit none
+ no snmp trap link-status
+ no cdp enable
+ spanning-tree portfast edge
+ spanning-tree bpduguard enable
+!
+interface Ethernet0/1
+ switchport access vlan 60
+ switchport mode access
+ switchport port-security mac-address sticky
+ switchport port-security mac-address sticky 0050.7966.68fa
+ switchport port-security
+ ip arp inspection limit none
+ no snmp trap link-status
+ no cdp enable
+ spanning-tree portfast edge
+ spanning-tree bpduguard enable
+!
+interface Ethernet0/2
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 666
+ switchport mode trunk
+!
+interface Ethernet0/3
+!
+interface Vlan300
+ no ip address
+ ipv6 address FE80:2222::4 link-local
+ ipv6 address 2001:2025:2222:300::2/64
+!
+ip forward-protocol nd
+!
+ip http server
+ip http secure-server
+!
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+!         
+!
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+line aux 0
+line vty 0 4
+!
+!
+!
+end
