@@ -5,3 +5,4 @@
 3. [DHCPv4/v6, SLAAC](lab03/)
 4. [Проектирование сети (IPv6)](lab04/)
 5. [PBR](lab05/)
+6. [OSPF](lab06/)
