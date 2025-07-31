@@ -110,3 +110,102 @@ L   2001:2025:1111:4::1/128 [0/0]
 C   2001:2025:1111:5::/127 [0/0]
      via Ethernet0/3, directly connected
 ```
+
+**Шаг 3. Настроить маршрутизаторы R14, R19. Маршрутизатор R19 находится в зоне 101 и получает только маршрут по умолчанию.**
+
+```
+R14(config-router)#int Et0/3       
+R14(config-if)#ipv6 ospf 1 area 101
+R14(config-if)#
+*Jul 31 11:28:33.147: %OSPFv3-5-ADJCHG: Process 1, IPv6, Nbr 5.5.5.5 on Ethernet0/3 from LOADING to FULL, Loading Done
+```
+
+```
+R19(config-router)#int Et0/0            
+R19(config-if)#ipv6 ospf 1 area 101
+R19(config-if)#
+*Jul 31 11:28:33.147: %OSPFv3-5-ADJCHG: Process 1, IPv6, Nbr 1.1.1.1 on Ethernet0/0 from LOADING to FULL, Loading Done
+```
+
+Теперь настроим 101 зону как totaly stub и проверим таблицу маршрутизации на R19.
+
+```
+R14(config-router)#area 101 stub no-summary 
+```
+
+```
+R19(config-router)#router ospfv3 1 
+R19(config-router)#area 101 stub no-summary 
+R19(config-router)#do sh ipv6 route                                   
+IPv6 Routing Table - default - 5 entries
+Codes: C - Connected, L - Local, S - Static, U - Per-user Static route
+       B - BGP, HA - Home Agent, MR - Mobile Router, R - RIP
+       H - NHRP, I1 - ISIS L1, I2 - ISIS L2, IA - ISIS interarea
+       IS - ISIS summary, D - EIGRP, EX - EIGRP external, NM - NEMO
+       ND - ND Default, NDp - ND Prefix, DCE - Destination, NDr - Redirect
+       RL - RPL, O - OSPF Intra, OI - OSPF Inter, OE1 - OSPF ext 1
+       OE2 - OSPF ext 2, ON1 - OSPF NSSA ext 1, ON2 - OSPF NSSA ext 2
+       la - LISP alt, lr - LISP site-registrations, ld - LISP dyn-eid
+       lA - LISP away, a - Application
+OI  ::/0 [110/11]
+     via FE80:1111::3, Ethernet0/0
+C   2001:2025:1111:6::/127 [0/0]
+     via Ethernet0/0, directly connected
+L   2001:2025:1111:6::/128 [0/0]
+     via Ethernet0/0, receive
+LC  2001:DEAD:BEEF::5/128 [0/0]
+     via Loopback1, receive
+L   FF00::/8 [0/0]
+     via Null0, receive
+```
+
+**Шаг 4. Настроить маршрутизаторы R15, R20. Маршрутизатор R20 находится в зоне 102 и получает все маршруты, кроме маршрутов до сетей зоны 101..**
+
+Настроим фильтрацию маршрутов, чтобы роутер R20 не получал от R15 только маршруты до сетей роутера R19 (area 101).
+
+```
+R15(config)#ipv6 prefix-list DENY-AREA101 seq 5 deny 2001:2025:1111:0006::/127        
+R15(config)#ipv6 prefix-list DENY-AREA101 seq 10 deny 2001:dead:beef::5/128
+R15(config)#ipv6 prefix-list DENY-AREA101 seq 15 permit ::/0 le 128
+R15(config)#
+R15(config)#router ospfv3 1
+R15(config-router)#address-family ipv6 unicast
+R15(config-router-af)#area 102 filter-list prefix DENY-AREA101 in
+```
+
+```
+R20(config)#do sh ipv6 route
+IPv6 Routing Table - default - 10 entries
+Codes: C - Connected, L - Local, S - Static, U - Per-user Static route
+       B - BGP, HA - Home Agent, MR - Mobile Router, R - RIP
+       H - NHRP, I1 - ISIS L1, I2 - ISIS L2, IA - ISIS interarea
+       IS - ISIS summary, D - EIGRP, EX - EIGRP external, NM - NEMO
+       ND - ND Default, NDp - ND Prefix, DCE - Destination, NDr - Redirect
+       RL - RPL, O - OSPF Intra, OI - OSPF Inter, OE1 - OSPF ext 1
+       OE2 - OSPF ext 2, ON1 - OSPF NSSA ext 1, ON2 - OSPF NSSA ext 2
+       la - LISP alt, lr - LISP site-registrations, ld - LISP dyn-eid
+       lA - LISP away, a - Application
+OE2 ::/0 [110/1], tag 1
+     via FE80:1111::4, Ethernet0/0
+OI  2001:2025:1111:2::/127 [110/30]
+     via FE80:1111::4, Ethernet0/0
+OI  2001:2025:1111:3::/127 [110/20]
+     via FE80:1111::4, Ethernet0/0
+OI  2001:2025:1111:4::/127 [110/20]
+     via FE80:1111::4, Ethernet0/0
+OI  2001:2025:1111:5::/127 [110/30]
+     via FE80:1111::4, Ethernet0/0
+C   2001:2025:1111:7::/127 [0/0]
+     via Ethernet0/0, directly connected
+L   2001:2025:1111:7::/128 [0/0]
+     via Ethernet0/0, receive
+OI  2001:2025:1111:8::/127 [110/20]
+     via FE80:1111::4, Ethernet0/0
+LC  2001:DEAD:BEEF::6/128 [0/0]
+     via Loopback1, receive
+L   FF00::/8 [0/0]
+     via Null0, receive
+
+```
+
+Как можно увидеть, отсутствуют маршруты до сети 2001:2025:1111:0006::/127 и до loopback-интерфейса R19.

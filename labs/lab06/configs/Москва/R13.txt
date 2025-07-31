@@ -1,16 +1,16 @@
-R12#sh run
+R13#sh run
 Building configuration...
 
-Current configuration : 2295 bytes
+Current configuration : 2293 bytes
 !
-! Last configuration change at 13:04:58 UTC Thu Jul 31 2025
+! Last configuration change at 20:13:58 UTC Wed Jul 30 2025
 !
 version 15.7
 service timestamps debug datetime msec
 service timestamps log datetime msec
 no service password-encryption
 !
-hostname R12
+hostname R13
 !
 boot-start-marker
 boot-end-marker
@@ -49,12 +49,12 @@ mmi snmp-timeout 180
 ip cef    
 ipv6 unicast-routing
 ipv6 cef
-ipv6 dhcp pool OTUS-vlan20
- dns-server 2001:2025:1111:20::FFFF
- domain-name otus.ru
-!
 ipv6 dhcp pool OTUS-vlan10
  dns-server 2001:2025:1111:10::FFFF
+ domain-name otus.ru
+!
+ipv6 dhcp pool OTUS-vlan20
+ dns-server 2001:2025:1111:20::FFFF
  domain-name otus.ru
 !
 !
@@ -85,65 +85,65 @@ redundancy
 !
 !
 !
-interface Loopback1
+interface Loopback0
  no ip address
- ipv6 address FE80:1111::1 link-local
- ipv6 address 2001:DEAD:BEEF::1/128
+ ipv6 address FE80:1111::2 link-local
+ ipv6 address 2001:DEAD:BEEF::2/128
 !
 interface Ethernet0/0
  no ip address
  duplex auto
 !
-interface Ethernet0/0.10
- encapsulation dot1Q 10
+interface Ethernet0/0.20
+ encapsulation dot1Q 20
  standby version 2
- standby 1 ipv6 FE80:1111::FFFF
- standby 1 ipv6 2001:2025:1111:10::FFFF/64
- standby 1 priority 150
- standby 1 preempt
- ipv6 address FE80:1111::1 link-local
- ipv6 address 2001:2025:1111:10::1/64
+ standby 2 ipv6 FE80:1111::FFFF
+ standby 2 ipv6 2001:2025:1111:20::FFFF/64
+ standby 2 priority 150
+ standby 2 preempt
+ ipv6 address FE80:1111::2 link-local
+ ipv6 address 2001:2025:1111:20::2/64
  ipv6 nd other-config-flag
- ipv6 dhcp server OTUS-vlan10
+ ipv6 dhcp server OTUS-vlan20
 !
 interface Ethernet0/0.666
- description Native 
+ description Native
  encapsulation dot1Q 666 native
 !
 interface Ethernet0/1
  no ip address
  duplex auto
 !
-interface Ethernet0/1.20
- encapsulation dot1Q 20
+interface Ethernet0/1.10
+ encapsulation dot1Q 10
  standby version 2
- standby 2 ipv6 FE80:1111::FFFF
- standby 2 ipv6 2001:2025:1111:20::FFFF/64
- ipv6 address FE80:1111::1 link-local
- ipv6 address 2001:2025:1111:20::1/64
+ standby 1 ipv6 FE80:1111::FFFF
+ standby 1 ipv6 2001:2025:1111:10::FFFF/64
+ ipv6 address FE80:1111::2 link-local
+ ipv6 address 2001:2025:1111:10::2/64
  ipv6 nd other-config-flag
- ipv6 dhcp server OTUS-vlan20
+ ipv6 dhcp server OTUS-vlan10
 !
 interface Ethernet0/1.666
- description Native 
+ description Native
  encapsulation dot1Q 666 native
 !
 interface Ethernet0/2
  no ip address
  duplex auto
- ipv6 address FE80:1111::1 link-local
- ipv6 address 2001:2025:1111:2::1/127
+ ipv6 address FE80:1111::2 link-local
+ ipv6 address 2001:2025:1111:4::1/127
  ipv6 ospf 1 area 10
 !
 interface Ethernet0/3
  no ip address
  duplex auto
- ipv6 address FE80:1111::1 link-local
- ipv6 address 2001:2025:1111:3::1/127
+ ipv6 address FE80:1111::2 link-local
+ ipv6 address 2001:2025:1111:5::1/127
  ipv6 ospf 1 area 10
 !
 router ospfv3 1
- router-id 3.3.3.3
+ router-id 4.4.4.4
  !
  address-family ipv6 unicast
  exit-address-family
@@ -177,3 +177,4 @@ line vty 0 4
 !
 !
 end
+
