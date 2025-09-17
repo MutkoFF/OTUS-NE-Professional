@@ -7,3 +7,4 @@
 5. [PBR](lab05/)
 6. [OSPF](lab06/)
 7. [IS-iS](lab07/)
+8. [EIGRP](lab08/)
