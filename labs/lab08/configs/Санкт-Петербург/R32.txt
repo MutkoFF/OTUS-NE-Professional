@@ -1,0 +1,148 @@
+R32(config-if)#do sh run
+Building configuration...
+
+Current configuration : 1507 bytes
+!
+! Last configuration change at 14:15:27 UTC Fri Sep 19 2025
+!
+version 15.7
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R32
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+ip cef    
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+!         
+!
+!
+!
+!
+!
+!
+!
+interface Loopback1
+ no ip address
+ ipv6 address FE80:3333::6 link-local
+ ipv6 address 2001:DEAD:BEEF::11/128
+!
+interface Ethernet0/0
+ no ip address
+ duplex auto
+ ipv6 address FE80:3333::6 link-local
+ ipv6 address 2001:2025:3333:50::/127
+!
+interface Ethernet0/1
+ no ip address
+ shutdown
+ duplex auto
+!         
+interface Ethernet0/2
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet0/3
+ no ip address
+ shutdown
+ duplex auto
+!
+!
+router eigrp OTUS_NETWORK
+ !
+ address-family ipv6 unicast autonomous-system 100
+  !
+  topology base
+   distribute-list prefix-list DEFAULT_ONLY in 
+  exit-af-topology
+  eigrp router-id 3.2.3.2
+ exit-address-family
+!
+ip forward-protocol nd
+!         
+!
+no ip http server
+no ip http secure-server
+!
+ipv6 ioam timestamp
+!
+!
+ipv6 prefix-list DEFAULT_ONLY seq 5 permit ::/0
+ipv6 prefix-list DEFAULT_ONLY seq 10 deny ::/0 le 128
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end
