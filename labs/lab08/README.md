@@ -9,8 +9,6 @@
 ### Топология Санкт-Петербурга
 ![Картинка](./pictures/lab08-SPB-topology.png)
 
-Итоговая конфигурация устройств.
-
 Настройка EIGRP на маршрутизаторе R16
 ```
 R16(config)#router eigrp OTUS_NETWORK
