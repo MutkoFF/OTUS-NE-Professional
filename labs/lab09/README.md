@@ -75,5 +75,31 @@ R23(config-router)#bgp router-id 23.23.23.23
 ```
 R24(config)#router bgp 520
 R24(config-router)#bgp router-id 24.24.24.24
+R24(config-router)#neighbor 2001:2025:ABCD:FF05:: rem
+R24(config-router)#neighbor 2001:2025:ABCD:FF05:: remot
+R24(config-router)#neighbor 2001:2025:ABCD:FF05:: remote-as 2042
+R24(config-router)#address-family ipv6 unicast
+R24(config-router-af)#neighbor 2001:2025:ABCD:FF05:: activate
+
+```
+
+Настройка BGP на маршрутизаторе R26
+```
+R26(config)#router bgp 520
+R26(config-router)#bgp router-id 26.26.26.26
+R26(config-router)#neighbor 2001:2025:ABCD:FF09:: remote-as 2042
+R26(config-router)#address-family ipv6 unicast
+R26(config-router-af)#neighbor 2001:2025:ABCD:FF09:: activate
+```
+
+Настройка BGP на маршрутизаторе R18
+```
+R18(config)#router bgp 2042
+R18(config-router)#bgp router-id 18.18.18.18
+R18(config-router)#neighbor 2001:2025:ABCD:FF05::1 remote-as 520
+R18(config-router)#address-family ipv6 unicast
+R18(config-router-af)#neighbor 2001:2025:ABCD:FF05::1 activate 
+R18(config-router)#neighbor 2001:2025:ABCD:FF09::1 remote-as 520
+R18(config-router-af)#neighbor 2001:2025:ABCD:FF09::1 activate 
 
 ```
