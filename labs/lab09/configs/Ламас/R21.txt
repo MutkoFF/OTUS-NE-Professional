@@ -1,16 +1,16 @@
-R32(config-if)#do sh run
+R21#sh run
 Building configuration...
 
-Current configuration : 1507 bytes
+Current configuration : 1917 bytes
 !
-! Last configuration change at 14:15:27 UTC Fri Sep 19 2025
+! Last configuration change at 11:35:39 UTC Sun Sep 21 2025
 !
 version 15.7
 service timestamps debug datetime msec
 service timestamps log datetime msec
 no service password-encryption
 !
-hostname R32
+hostname R21
 !
 boot-start-marker
 boot-end-marker
@@ -79,39 +79,62 @@ redundancy
 !
 interface Loopback1
  no ip address
- ipv6 address FE80:3333::6 link-local
- ipv6 address 2001:DEAD:BEEF::11/128
+ ipv6 address 2001:DEAD:BEEF::18/128
 !
 interface Ethernet0/0
  no ip address
  duplex auto
- ipv6 address FE80:3333::6 link-local
- ipv6 address 2001:2025:3333:50::/127
+ ipv6 address FE80:7777::1 link-local
+ ipv6 address 2001:2025:ABCD:FF03::1/127
 !
 interface Ethernet0/1
  no ip address
- shutdown
  duplex auto
+ ipv6 address FE80:7777::1 link-local
+ ipv6 address 2001:2025:ABCD:FF01::1/127
 !         
 interface Ethernet0/2
  no ip address
- shutdown
  duplex auto
+ ipv6 address FE80:4444::2 link-local
+ ipv6 address 2001:2025:ABCD:FF04::/127
 !
 interface Ethernet0/3
  no ip address
  shutdown
  duplex auto
 !
+interface Ethernet1/0
+ no ip address
+ shutdown
+ duplex auto
 !
-router eigrp OTUS_NETWORK
+interface Ethernet1/1
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/2
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/3
+ no ip address
+ shutdown
+ duplex auto
+!
+router bgp 301
+ bgp router-id 21.21.21.21
+ bgp log-neighbor-changes
+ neighbor 2001:2025:ABCD:FF01:: remote-as 101
+ neighbor 2001:2025:ABCD:FF03:: remote-as 1001
+ neighbor 2001:2025:ABCD:FF04::1 remote-as 520
  !
- address-family ipv6 unicast autonomous-system 100
-  !
-  topology base
-   distribute-list prefix-list DEFAULT_ONLY in 
-  exit-af-topology
-  eigrp router-id 3.2.3.2
+ address-family ipv6
+  neighbor 2001:2025:ABCD:FF01:: activate
+  neighbor 2001:2025:ABCD:FF03:: activate
+  neighbor 2001:2025:ABCD:FF04::1 activate
  exit-address-family
 !
 ip forward-protocol nd
@@ -122,9 +145,6 @@ no ip http secure-server
 !
 ipv6 ioam timestamp
 !
-!
-ipv6 prefix-list DEFAULT_ONLY seq 5 permit ::/0
-ipv6 prefix-list DEFAULT_ONLY seq 10 deny ::/0 le 128
 !
 !
 control-plane
@@ -141,7 +161,7 @@ line con 0
  logging synchronous
 line aux 0
 line vty 0 4
- login
+ login    
  transport input none
 !
 !

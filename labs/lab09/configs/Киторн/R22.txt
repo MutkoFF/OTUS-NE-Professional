@@ -1,16 +1,16 @@
-R18#sh run
+R22#sh run
 Building configuration...
 
-Current configuration : 1888 bytes
+Current configuration : 1844 bytes
 !
-! Last configuration change at 11:38:55 UTC Sun Sep 21 2025
+! Last configuration change at 11:43:23 UTC Sun Sep 21 2025
 !
 version 15.7
 service timestamps debug datetime msec
 service timestamps log datetime msec
 no service password-encryption
 !
-hostname R18
+hostname R22
 !
 boot-start-marker
 boot-end-marker
@@ -77,55 +77,60 @@ redundancy
 !
 !
 !
-interface Loopback1
- no ip address
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:DEAD:BEEF::10/128
-!
 interface Ethernet0/0
  no ip address
  duplex auto
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:2025:3333:10::1/127
+ ipv6 address FE80:6666::1 link-local
+ ipv6 address 2001:2025:ABCD:FF00::1/127
 !
 interface Ethernet0/1
  no ip address
  duplex auto
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:2025:3333:20::1/127
+ ipv6 address FE80:7777::2 link-local
+ ipv6 address 2001:2025:ABCD:FF01::/127
 !
 interface Ethernet0/2
  no ip address
  duplex auto
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:2025:ABCD:FF05::/127
+ ipv6 address FE80:4444::1 link-local
+ ipv6 address 2001:2025:ABCD:FF02::/127
 !
 interface Ethernet0/3
  no ip address
+ shutdown
  duplex auto
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:2025:ABCD:FF09::/127
 !
+interface Ethernet1/0
+ no ip address
+ shutdown
+ duplex auto
 !
-router eigrp OTUS_NETWORK
- !
- address-family ipv6 unicast autonomous-system 100
-  !
-  topology base
-  exit-af-topology
-  eigrp router-id 8.8.8.8
- exit-address-family
-!         
-router bgp 2042
- bgp router-id 18.18.18.18
+interface Ethernet1/1
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/2
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/3
+ no ip address
+ shutdown
+ duplex auto
+!
+router bgp 101
+ bgp router-id 22.22.22.22
  bgp log-neighbor-changes
- neighbor 2001:2025:ABCD:FF05::1 remote-as 520
- neighbor 2001:2025:ABCD:FF09::1 remote-as 520
+ neighbor 2001:2025:ABCD:FF00:: remote-as 1001
+ neighbor 2001:2025:ABCD:FF01::1 remote-as 301
+ neighbor 2001:2025:ABCD:FF04::1 remote-as 520
  !
  address-family ipv6
-  network 2001:DEAD:BEEF::10/128
-  neighbor 2001:2025:ABCD:FF05::1 activate
-  neighbor 2001:2025:ABCD:FF09::1 activate
+  neighbor 2001:2025:ABCD:FF00:: activate
+  neighbor 2001:2025:ABCD:FF01::1 activate
+  neighbor 2001:2025:ABCD:FF04::1 activate
  exit-address-family
 !
 ip forward-protocol nd
@@ -133,7 +138,7 @@ ip forward-protocol nd
 !
 no ip http server
 no ip http secure-server
-!
+!         
 ipv6 ioam timestamp
 !
 !
@@ -156,4 +161,4 @@ line vty 0 4
  transport input none
 !
 !
-end
+end 

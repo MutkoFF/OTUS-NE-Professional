@@ -1,16 +1,16 @@
-R18#sh run
+R23#sh run
 Building configuration...
 
-Current configuration : 1888 bytes
+Current configuration : 1995 bytes
 !
-! Last configuration change at 11:38:55 UTC Sun Sep 21 2025
+! Last configuration change at 11:43:33 UTC Sun Sep 21 2025
 !
 version 15.7
 service timestamps debug datetime msec
 service timestamps log datetime msec
 no service password-encryption
 !
-hostname R18
+hostname R23
 !
 boot-start-marker
 boot-end-marker
@@ -79,53 +79,71 @@ redundancy
 !
 interface Loopback1
  no ip address
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:DEAD:BEEF::10/128
+ ipv6 address FE80:4444::3 link-local
+ ipv6 address 2001:DEAD:BEEF::12/128
 !
 interface Ethernet0/0
  no ip address
  duplex auto
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:2025:3333:10::1/127
+ ipv6 address FE80:4444::3 link-local
+ ipv6 address 2001:2025:ABCD:FF02::1/127
 !
 interface Ethernet0/1
  no ip address
  duplex auto
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:2025:3333:20::1/127
+ ipv6 address FE80:4444::3 link-local
+ ipv6 address 2001:2025:4444:1::1/127
+ ipv6 router isis 
+ isis network point-to-point 
 !
 interface Ethernet0/2
  no ip address
  duplex auto
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:2025:ABCD:FF05::/127
+ ipv6 address FE80:4444::3 link-local
+ ipv6 address 2001:2025:4444:2::1/127
+ ipv6 router isis 
+ isis network point-to-point 
 !
 interface Ethernet0/3
  no ip address
+ shutdown
  duplex auto
- ipv6 address FE80:3333::3 link-local
- ipv6 address 2001:2025:ABCD:FF09::/127
 !
+interface Ethernet1/0
+ no ip address
+ shutdown
+ duplex auto
 !
-router eigrp OTUS_NETWORK
- !
- address-family ipv6 unicast autonomous-system 100
-  !
-  topology base
-  exit-af-topology
-  eigrp router-id 8.8.8.8
- exit-address-family
-!         
-router bgp 2042
- bgp router-id 18.18.18.18
- bgp log-neighbor-changes
- neighbor 2001:2025:ABCD:FF05::1 remote-as 520
- neighbor 2001:2025:ABCD:FF09::1 remote-as 520
+interface Ethernet1/1
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/2
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/3
+ no ip address
+ shutdown
+ duplex auto
+!
+router isis
+ net 49.2222.0000.0000.0023.00
+ metric-style wide
  !
  address-family ipv6
-  network 2001:DEAD:BEEF::10/128
-  neighbor 2001:2025:ABCD:FF05::1 activate
-  neighbor 2001:2025:ABCD:FF09::1 activate
+  multi-topology
+ exit-address-family
+!
+router bgp 520
+ bgp router-id 23.23.23.23
+ bgp log-neighbor-changes
+ neighbor 2001:2025:ABCD:FF02:: remote-as 101
+ !
+ address-family ipv6
+  neighbor 2001:2025:ABCD:FF02:: activate
  exit-address-family
 !
 ip forward-protocol nd
@@ -143,7 +161,7 @@ control-plane
 !
 !
 !
-!
+!         
 !
 !
 !
