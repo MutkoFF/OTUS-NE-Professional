@@ -132,6 +132,7 @@ R18(config-router-af)#network 2001:DEAD:BEEF::10/128
 ```
 
 Далее, проверим связанность между роутерами Москвы и Санкт-Петербурга
+
 R14
 ```
 R14#ping 2001:dead:beef::10 source 2001:DEAD:BEEF::3
