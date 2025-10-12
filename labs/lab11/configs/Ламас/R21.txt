@@ -1,0 +1,173 @@
+R21#sh run
+Building configuration...
+
+Current configuration : 2165 bytes
+!
+! Last configuration change at 11:30:31 UTC Sun Oct 12 2025
+!
+version 15.7
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R21
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+ip cef    
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+!         
+!
+!
+!
+!
+!
+!
+!
+interface Loopback1
+ no ip address
+ ipv6 address 2001:DEAD:BEEF::18/128
+!
+interface Ethernet0/0
+ no ip address
+ duplex auto
+ ipv6 address FE80:7777::1 link-local
+ ipv6 address 2001:2025:ABCD:FF03::1/127
+!
+interface Ethernet0/1
+ no ip address
+ duplex auto
+ ipv6 address FE80:7777::1 link-local
+ ipv6 address 2001:2025:ABCD:FF01::1/127
+!         
+interface Ethernet0/2
+ no ip address
+ duplex auto
+ ipv6 address FE80:4444::2 link-local
+ ipv6 address 2001:2025:ABCD:FF04::/127
+!
+interface Ethernet0/3
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/0
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/1
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/2
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/3
+ no ip address
+ shutdown
+ duplex auto
+!
+router bgp 301
+ bgp router-id 21.21.21.21
+ bgp log-neighbor-changes
+ neighbor 2001:2025:ABCD:FF01:: remote-as 101
+ neighbor 2001:2025:ABCD:FF03:: remote-as 1001
+ neighbor 2001:2025:ABCD:FF04::1 remote-as 520
+ !
+ address-family ipv6
+  neighbor 2001:2025:ABCD:FF01:: activate
+  neighbor 2001:2025:ABCD:FF03:: activate
+  neighbor 2001:2025:ABCD:FF03:: prefix-list DEFAULT-AND-SPB out
+  neighbor 2001:2025:ABCD:FF04::1 activate
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+ipv6 ioam timestamp
+!
+!
+ipv6 prefix-list DEFAULT-AND-SPB seq 5 permit ::/0
+ipv6 prefix-list DEFAULT-AND-SPB seq 10 permit 2001:2025:3333::/48 le 64
+ipv6 prefix-list DEFAULT-AND-SPB seq 15 deny ::/0 le 128
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end
