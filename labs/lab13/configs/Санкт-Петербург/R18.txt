@@ -1,0 +1,170 @@
+R18#sh run
+Building configuration...
+
+Current configuration : 2272 bytes
+!
+version 15.7
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R18
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback1
+ no ip address
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:DEAD:BEEF::10/128
+!
+interface Tunnel0
+ no ip address
+ ipv6 address 2001:2025:5555::/127
+ tunnel source Ethernet0/2
+ tunnel mode gre ipv6
+ tunnel destination 2001:2025:ABCD:FF03::
+!
+interface Ethernet0/0
+ no ip address
+ duplex auto
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:2025:3333:10::1/127
+!
+interface Ethernet0/1
+ no ip address
+ duplex auto
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:2025:3333:20::1/127
+!
+interface Ethernet0/2
+ no ip address
+ duplex auto
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:2025:ABCD:FF05::/127
+!
+interface Ethernet0/3
+ no ip address
+ duplex auto
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:2025:ABCD:FF09::/127
+!
+!
+router eigrp OTUS_NETWORK
+ !
+ address-family ipv6 unicast autonomous-system 100
+  !
+  topology base
+  exit-af-topology
+  eigrp router-id 8.8.8.8
+ exit-address-family
+!
+router bgp 2042
+ bgp router-id 18.18.18.18
+ bgp log-neighbor-changes
+ neighbor 2001:2025:ABCD:FF05::1 remote-as 520
+ neighbor 2001:2025:ABCD:FF09::1 remote-as 520
+ !
+ address-family ipv6
+  network 2001:DEAD:BEEF::10/128
+  neighbor 2001:2025:ABCD:FF05::1 activate
+  neighbor 2001:2025:ABCD:FF05::1 prefix-list SPB-PREFIXES out
+  neighbor 2001:2025:ABCD:FF09::1 activate
+  neighbor 2001:2025:ABCD:FF09::1 prefix-list SPB-PREFIXES out
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+ipv6 route 2001:2025:1111::/48 2001:2025:5555::1
+ipv6 route ::/0 2001:2025:ABCD:FF05::1
+ipv6 ioam timestamp
+!
+!
+ipv6 prefix-list SPB-PREFIXES seq 5 permit 2001:2025:3333::/48 le 64
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end
