@@ -1,0 +1,163 @@
+R18#sh run
+Building configuration...
+
+Current configuration : 2334 bytes
+!
+version 15.7
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R18
+!
+boot-start-marker
+boot-end-marker
+!
+no aaa new-model
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+multilink bundle-name authenticated
+!
+!
+crypto pki trustpoint MY-CA
+ enrollment url http://[2001:2025:ABCD:FF03::]
+ subject-name CN=R18,OU=VPN,O=Cisco,C=RU
+ revocation-check none
+ rsakeypair R18-KEY 2048
+!
+crypto pki certificate chain MY-CA
+ certificate 01
+  3082023F308201A8A003020102020900D4B12A8F45CC11B4300A06082A8648CE3D040302
+  300D310B3009060355040613025255301F301D060355040A1316436973636F20537973
+  74656D732C20496E632E301E170D3235313132363032313130385A170D323730353031
+  3032313130385A3033312F302D06035504030C26523138204365727469666963617465
+  205369676E696E672054657374205375626A656374202D2043504B493059301306072A
+  8648CE3D020106082A8648CE3D030107034200044C73C96A0881152B3493D768722AD3
+  8CB09D6FBA3654576B69C44D8D41AF2B8822E1A99407354E809C090B4B3AF1EAEE1C90
+  D6B9FA141B13EF1B7D725A3FED4AAF300A06082A8648CE3D0403020349003046022100
+  EB7D6AB4283A1E62DA7E44C5A61287AF31A54AEDC1B9C0EBC9B7D06EFC07CA3022100
+  9F018FE6D3AC3CC22177305F5F77D61095C75F95D1C161BA6C571A3E7F8D0D98
+  quit
+ certificate ca 01
+  3082024B308201B4A003020102020900C6F14D8E33CFAA67300A06082A8648CE3D040302
+  301D310B3009060355040613025255310E300C060355040A1305434953434F301E170D
+  3235313132363032313030355A170D3335313132333032313030355A301D310B300906
+  0355040613025255310E300C060355040A1305434953434F3059301306072A8648CE3D
+  020106082A8648CE3D030107034200045E3B9A52B11A94692F8E4A3DEB981E7B5CFFF0
+  6670E9E76DAE0C1CD9D429084F2E833EC6D4A7730CF11CA8E99D3F229C4B53BCA1E44D
+  15B4C5D77C59A2F0C91A300A06082A8648CE3D0403020348003045022100E0C9A991D4
+  7C9C0646BC1F0727AE38D48FC1CED3EC835B387EDD7AC013BDA9DC02202F49C50267DA
+  4C23E8564A7EF8E0B5C9EBC930944D4BBEABDD29F7F66B3B6
+  quit
+!
+! 
+crypto ikev2 proposal GRE-PROP
+ encryption aes-cbc-256
+ integrity sha256
+ group 14
+!
+crypto ikev2 policy GRE-POL
+ proposal GRE-PROP
+!
+crypto ikev2 profile GRE-PROF
+ match identity remote fqdn R15
+ identity local fqdn R18
+ authentication remote rsa-sig
+ authentication local rsa-sig
+ pki trustpoint MY-CA
+!
+!
+! 
+crypto ipsec transform-set GRE-SET esp-aes 256 esp-sha256-hmac
+ mode transport
+!
+crypto ipsec profile GRE-IPSEC
+ set transform-set GRE-SET
+ set ikev2-profile GRE-PROF
+!
+!
+interface Loopback1
+ no ip address
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:DEAD:BEEF::10/128
+!
+interface Tunnel0
+ no ip address
+ ipv6 address 2001:2025:5555::/127
+ tunnel source Ethernet0/2
+ tunnel mode gre ipv6
+ tunnel destination 2001:2025:ABCD:FF03::
+ tunnel protection ipsec profile GRE-IPSEC
+!
+interface Ethernet0/0
+ no ip address
+ duplex auto
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:2025:3333:10::1/127
+!
+interface Ethernet0/1
+ no ip address
+ duplex auto
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:2025:3333:20::1/127
+!
+interface Ethernet0/2
+ no ip address
+ duplex auto
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:2025:ABCD:FF05::/127
+!
+interface Ethernet0/3
+ no ip address
+ duplex auto
+ ipv6 address FE80:3333::3 link-local
+ ipv6 address 2001:2025:ABCD:FF09::/127
+!
+router eigrp OTUS_NETWORK
+ address-family ipv6 unicast autonomous-system 100
+  topology base
+  exit-af-topology
+  eigrp router-id 8.8.8.8
+ exit-address-family
+!
+router bgp 2042
+ bgp router-id 18.18.18.18
+ bgp log-neighbor-changes
+ neighbor 2001:2025:ABCD:FF05::1 remote-as 520
+ neighbor 2001:2025:ABCD:FF09::1 remote-as 520
+ !
+ address-family ipv6
+  network 2001:DEAD:BEEF::10/128
+  neighbor 2001:2025:ABCD:FF05::1 activate
+  neighbor 2001:2025:ABCD:FF05::1 prefix-list SPB-PREFIXES out
+  neighbor 2001:2025:ABCD:FF09::1 activate
+  neighbor 2001:2025:ABCD:FF09::1 prefix-list SPB-PREFIXES out
+ exit-address-family
+!
+ip forward-protocol nd
+no ip http server
+no ip http secure-server
+!
+ipv6 route 2001:2025:1111::/48 2001:2025:5555::1
+ipv6 route ::/0 2001:2025:ABCD:FF05::1
+ipv6 ioam timestamp
+!
+ipv6 prefix-list SPB-PREFIXES seq 5 permit 2001:2025:3333::/48 le 64
+!
+control-plane
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+end

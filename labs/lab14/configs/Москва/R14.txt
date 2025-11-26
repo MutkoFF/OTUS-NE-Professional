@@ -1,0 +1,204 @@
+R14#sh run
+Building configuration...
+
+Current configuration : 5400 bytes
+!
+! Last configuration change at 04:55:32 MSK Wed Nov 26 2025
+!
+version 15.7
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R14
+!
+boot-start-marker
+boot-end-marker
+!
+no aaa new-model
+!
+clock timezone MSK 3 0
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+no ip domain lookup
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+crypto pki server MY-CS
+ database level complete
+ no database archive
+ issuer-name CN=MY-CS,OU=VPN,O=Cisco,C=RU
+ hash sha256
+ lifetime crl 336
+ lifetime certificate 730
+ lifetime ca-certificate 1000
+ cdp-url http://[2001:2025:ABCD:FF00::]/cerbase/MY-CS.crl
+ database url unix:/cerbase
+ no shut
+!
+crypto pki trustpoint MY-CS-TP
+ enrollment url http://[2001:2025:ABCD:FF00::]
+ subject-name CN=R14,OU=VPN,O=Cisco,C=RU
+ revocation-check crl
+ rsakeypair R14-KEY
+!
+crypto pki certificate chain MY-CS
+ certificate ca 01
+  3082024F 308201B8 A0030201 02020101 300D0609 2A864886 F70D0101 0B050030
+  3B310B30 09060355 04061302 5255310E 300C0603 55040A13 05436973 636F310C
+  300A0603 55040B13 0356504E 310E300C 06035504 0313054D 592D4353 301E170D
+  32353131 32363031 33343138 5A170D32 38303832 32303133 3431385A 303B310B
+  30090603 55040613 02525531 0E300C06 0355040A 13054369 73636F31 0C300A06
+  0355040B 13035650 4E310E30 0C060355 04031305 4D592D43 5330819F 300D0609
+  2A864886 F70D0101 01050003 818D0030 81890281 8100875C D981D157 C6DD6187
+  00583561 D0C8DA85 1D1D93BA 0FF9FA5B FCDDE67E 9A700AD7 62197BB4 4D4E4120
+  B156DC79 C8ABFAB8 1939BEEC C2F84036 CE889DED F9D6BB57 7D9CEBCF 9260A6DB
+  6DCDF378 CA03C09A 424F5842 29800D13 F9467A37 199FB27D 3F53AD98 7F3E5493
+  42BC1F27 0B2DB929 600075BE B2EA1E30 817787AF 0FA90203 010001A3 63306130
+  0F060355 1D130101 FF040530 030101FF 300E0603 551D0F01 01FF0404 03020186
+  301F0603 551D2304 18301680 142480F3 E39A2D31 B31A4CA4 C1DFD2E2 A5B17F31
+  66301D06 03551D0E 04160414 2480F3E3 9A2D31B3 1A4CA4C1 DFD2E2A5 B17F3166
+  300D0609 2A864886 F70D0101 0B050003 81810025 3BC86690 1C5E50A3 CCC949AA
+  48779E74 61D7E502 D5B1BBA8 2448C031 C746C0B8 E96E3B1F C9514B6B 1E96B768
+  89E0683B 1B5C5460 D5160FCB 7A99FBBA B78A7C1A 1028343F 3A597B0D 20B08CEE
+  614A364B 1C906E68 F42EE88C 275B2668 C2682461 1B0D1344 6107A4E8 F2084A11
+  1D7AA786 6C139AF7 252BBB43 0A3E1C05 FB7EF1
+        quit
+!
+crypto ikev2 proposal DMVPN-PROP
+ encryption aes-cbc-256
+ integrity sha256
+ group 14
+!
+crypto ikev2 policy DMVPN-POLICY
+ proposal DMVPN-PROP
+!
+crypto ikev2 profile DMVPN-IKEV2
+ match identity remote fqdn vpn
+ authentication remote rsa-sig
+ authentication local rsa-sig
+ identity local fqdn R14
+ trustpoint MY-CS-TP
+!
+crypto ipsec transform-set DMVPN-SET esp-aes 256 esp-sha256-hmac
+ mode transport
+!
+crypto ipsec profile DMVPN-IPv6
+ set transform-set DMVPN-SET
+ set ikev2-profile DMVPN-IKEV2
+!
+interface Tunnel1
+ ipv6 address 2001:2025:6666::1/128
+ tunnel source Ethernet0/2
+ tunnel mode gre multipoint
+ tunnel protection ipsec profile DMVPN-IPv6
+ ipv6 nhrp network-id 1
+!
+interface Loopback1
+ no ip address
+ ipv6 address FE80:1111::3 link-local
+ ipv6 address 2001:DEAD:BEEF::3/128
+!
+interface Ethernet0/0
+ no ip address
+ duplex auto
+ ipv6 address FE80:1111::3 link-local
+ ipv6 address 2001:2025:1111:2::/127
+ ipv6 ospf 1 area 10
+!
+interface Ethernet0/1
+ no ip address
+ duplex auto
+ ipv6 address FE80:1111::3 link-local
+ ipv6 address 2001:2025:1111:5::/127
+ ipv6 ospf 1 area 10
+!
+interface Ethernet0/2
+ no ip address
+ duplex auto
+ ipv6 address FE80:6666::2 link-local
+ ipv6 address 2001:2025:ABCD:FF00::/127
+!
+interface Ethernet0/3
+ no ip address
+ duplex auto
+ ipv6 address FE80:1111::3 link-local
+ ipv6 address 2001:2025:1111:6::1/127
+ ipv6 ospf 1 area 101
+!
+interface Ethernet1/0
+ no ip address
+ duplex auto
+ ipv6 address FE80:1111::3 link-local
+ ipv6 address 2001:2025:1111:8::/127
+ ipv6 ospf 1 area 0
+!
+interface Ethernet1/1
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/2
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet1/3
+ no ip address
+ shutdown
+ duplex auto
+!
+router ospfv3 1
+ router-id 1.1.1.1
+ area 101 stub no-summary
+ address-family ipv6 unicast
+  default-information originate always
+ exit-address-family
+!
+router bgp 1001
+ bgp router-id 14.14.14.14
+ bgp log-neighbor-changes
+ neighbor 2001:2025:1111:8::1 remote-as 1001
+ neighbor 2001:2025:ABCD:FF00::1 remote-as 101
+ address-family ipv6
+  network 2001:DEAD:BEEF::3/128
+  neighbor 2001:2025:1111:8::1 activate
+  neighbor 2001:2025:ABCD:FF00::1 activate
+  neighbor 2001:2025:ABCD:FF00::1 filter-list 1 in
+ exit-address-family
+!
+ip forward-protocol nd
+!
+ip as-path access-list 1 deny _1001_
+ip as-path access-list 1 permit .*
+!
+no ip http server
+no ip http secure-server
+!
+ipv6 route 2001:2025:2222:50::/64 2001:2025:6666::2
+ipv6 route 2001:2025:ABCD:FF06::/127 2001:2025:ABCD:FF00::1
+ipv6 route 2001:2025:ABCD:FF07::/127 2001:2025:ABCD:FF00::1
+ipv6 route 2001:DEAD:BEEF::16/128 2001:2025:6666::3
+ipv6 route ::/0 2001:2025:ABCD:FF00::1 250
+ipv6 ioam timestamp
+!
+control-plane
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+ntp update-calendar
+ntp server 2001:2025:1111:2::1
+!
+end
